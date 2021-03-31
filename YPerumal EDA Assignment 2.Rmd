@@ -1,0 +1,37 @@
+---
+title: "EDA Assignment 2"
+author: "Yevashan Perumal"
+date: "3/31/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+#Import Libaries
+library(tidyverse)
+
+```
+
+```{r}
+#Import Dat
+# Data in same folder as this file
+sup <-read_rds("./superbru-10k.Rds")
+fixtures <- read_rds("./fixtures.rds")
+
+head(sup)
+head(fixtures)
+dim(sup)
+dim(fixtures)
+```
+```{r}
+#Merge predictins and fixtures
+df <- sup %>% left_join(fixtures,by='game_id')
+dim(df)
+head(df)
+#Calculate prediction error
+df %>% mutate(prediction_error = home_predicted_margin-result)
+```
+
