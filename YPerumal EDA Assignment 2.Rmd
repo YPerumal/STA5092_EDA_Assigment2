@@ -1,7 +1,7 @@
 ---
 title: "EDA Assignment 2"
 author: "Yevashan Perumal"
-date: "3/31/2021"
+date: "14/04/2021"
 output: pdf_document
 ---
 
@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = FALSE)
 ```{r}
 #Import Libaries
 library(tidyverse)
-
 ```
 
 ```{r}
@@ -26,12 +25,62 @@ head(fixtures)
 dim(sup)
 dim(fixtures)
 ```
+
+
 ```{r}
 #Merge predictins and fixtures
 df <- sup %>% left_join(fixtures,by='game_id')
 dim(df)
 head(df)
 #Calculate prediction error
-df %>% mutate(prediction_error = home_predicted_margin-result)
+df <-df %>% mutate(prediction_error = abs(home_predicted_margin-result))
+
+#correct results indicator
+df <- df %>% mutate(correct_result = ifelse(home_predicted_margin>0 & result>0,1,
+                                         ifelse(home_predicted_margin<0 & result<0,1,
+                                         ifelse(home_predicted_margin==0 & result==0,1,
+                                         0))))
+```
+```{r}
+#points allocation function Superbru
+points_alloc <- function(result,error){
+    if(result==1 & error<=5){
+        x<-15
+    }else if(result==1 & error>5){
+        x<-10
+    }else if(result==0 & error<=5){
+        x<-5
+    }else{
+        x<-0
+    }
+    return(x)
+}
+
+df['points_scored'] <- mapply(df$correct_result,df$home_predicted_margin,FUN=points_alloc)
+head(df)
+```
+```{r}
+    # Adding my own measure of prediction accuray, squared errors
+#Punishes the degree which you were wrong more
+df['squared_error'] <- (df$home_predicted_margin-df$result)^2
+head(df)
+```
+```{r}
+# Cumulative accuracy for each user after a game
+df <- df %>% group_by(user_id)%>%
+    arrange(user_id,game_id)%>%
+    mutate(cumulative_score = cumsum(points_scored))%>%
+    ungroup()
+
+df <- df %>% group_by(user_id)%>%
+    arrange(user_id,game_id)%>%
+    mutate(cumulative_squared_error = cumsum(squared_error))%>%
+    ungroup()
+head(df)
+```
+
+```{r}
+# Task 1
+
 ```
 
