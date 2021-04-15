@@ -147,6 +147,40 @@ game_rank(game_id_input=2,user_id_input=2)
 ```
 
 ```{r}
-df%>%filter(user_id==2)
+#Task 3
+df %>% group_by(game_id)%>%
+    mutate(mean_error = mean(prediction_error),med_erro=median(prediction_error))%>%
+    ggplot(aes(x=game_id))+
+    geom_line(aes(y=med_erro-mean_error))
+    # geom_line(aes(y=med_erro))
+
+
+# Do you calculate the mean and median errors before or after grouping?
+
+# Looking at prediction errors?Or get mean and median predictions per game, 
+# then get prediction errors? so the "crowd" and "average" users are like user_ids??
+    
+```
+
+
+```{r}
+
+head(df)
+df <- 
+df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,1,0))
+head(df)
+
+#Average error for fan predicted games should be lower?or Higher?
+
+fans<-df%>%group_by(fan_pred)%>%
+    summarise(mean_error = mean(prediction_error))
+
+# T-Test? Different sample sizes?
+```
+
+
+```{r}
+
+
 ```
 
