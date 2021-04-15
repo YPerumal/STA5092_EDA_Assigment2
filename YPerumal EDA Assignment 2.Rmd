@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = FALSE)
 ```{r}
 #Import Libaries
 library(tidyverse)
+library(ggrepel)
+library(gridExtra)
 ```
 
 ```{r}
@@ -81,6 +83,70 @@ head(df)
 
 ```{r}
 # Task 1
+# If games are harder to predict, then prediction errors should be larger.Taking the mean prediction error per game, and then doing a boxplot allows us to find the outliersin terms of mean prediction error(and thus the games hardest to call)
 
+
+is_outlier <- function(x) {
+  return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
+}
+
+b1 <-df %>% group_by(game_id)%>%
+    summarise(mean_pred_error=mean(prediction_error))%>%
+    mutate(outlier = ifelse(is_outlier(mean_pred_error), 
+                            game_id,as.numeric(NA))) %>%
+    ggplot(aes(x=1,y=mean_pred_error))+
+    geom_boxplot()+
+    geom_text_repel(aes(label=outlier),na.rm = TRUE)+
+    labs(title = "Histogram of the Mean 
+    Prediction Error Per Game")+
+    ylab("Mean Prediction Error")+
+    theme_minimal()
+
+b2 <-df %>% group_by(game_id)%>%
+    summarise(mean_sq_pred_error=sqrt(mean(squared_error)))%>%
+    mutate(outlier = ifelse(is_outlier(mean_sq_pred_error), 
+                            game_id,as.numeric(NA))) %>%
+    ggplot(aes(x=1,y=mean_sq_pred_error))+
+    geom_boxplot()+
+    geom_text_repel(aes(label=outlier),na.rm = TRUE)+
+    labs(title = "Histogram of the Mean
+    Prediction Error Per Game")+
+    ylab("RMSE")+
+    theme_minimal()
+
+
+grid.arrange(b1,b2,ncol=2)
+head(df)
+```
+
+```{r}
+#Task 2.1
+#Leaderboard
+#Do we need to print all twenty we get?
+df %>%group_by(week,user_id)%>%
+    summarise(max_score = max(cumulative_score))%>%
+    mutate(rank = rank(max_score,ties.method="first"))%>%
+    arrange(week,rank)%>%
+    filter(rank<=20)
+```
+
+
+```{r}
+# Task 2.2
+#Code to return rank at any time
+game_rank <- function(game_id_input,user_id_input){
+    df %>%group_by(game_id,user_id)%>%
+    summarise(max_score = max(cumulative_score))%>%
+    mutate(rank = rank(max_score,ties.method="first"))%>%
+    arrange(game_id,rank)%>%
+    filter(user_id==user_id_input & game_id==game_id_input)
+}
+game_rank(game_id_input=2,user_id_input=2)
+
+# Test if the rank stuff is working
+```
+
+```{r}
+df%>%filter(user_id==2)
 ```
 
