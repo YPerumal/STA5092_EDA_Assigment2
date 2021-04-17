@@ -9,12 +9,30 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-```{r}
+```{r include=FALSE}
 #Import Libaries
 library(tidyverse)
 library(ggrepel)
 library(gridExtra)
 ```
+
+
+This report aimns to explore the two datasets "superbru-10k.Rds" and "fixtures.rds". These datasets contain information on predictions made users of the Superbru Super Rugby Fantasy league, and well as information on the fixutres that take place and their related results. 
+We then calculate how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
+
+We then explore the data and attempt to answer various questions surrounding it.
+
+To allocation points, we take the absolute difference between the predicted and actual results. 
+
+As an additional measure of prediction error, we calculate the squared prediction error.
+
+
+
+### Instructions to run this script
+# Unzip the contents of the folder : ""
+Copy the two data files into the same folder
+Open the file "STA5092_EDA_Assigment2.Rproj"
+Use the file explore to open "Yperumak EDA Assignment 2.Rmd"
 
 ```{r}
 #Import Dat
@@ -22,10 +40,10 @@ library(gridExtra)
 sup <-read_rds("./superbru-10k.Rds")
 fixtures <- read_rds("./fixtures.rds")
 
-head(sup)
-head(fixtures)
-dim(sup)
-dim(fixtures)
+# head(sup)
+# head(fixtures)
+# dim(sup)
+# dim(fixtures)
 ```
 
 
@@ -59,7 +77,7 @@ points_alloc <- function(result,error){
 }
 
 df['points_scored'] <- mapply(df$correct_result,df$home_predicted_margin,FUN=points_alloc)
-head(df)
+tail(df)
 ```
 ```{r}
     # Adding my own measure of prediction accuray, squared errors
@@ -68,17 +86,23 @@ df['squared_error'] <- (df$home_predicted_margin-df$result)^2
 head(df)
 ```
 ```{r}
-# Cumulative accuracy for each user after a game
+# Cumulative points for each user after a game
 df <- df %>% group_by(user_id)%>%
     arrange(user_id,game_id)%>%
     mutate(cumulative_score = cumsum(points_scored))%>%
+    ungroup()
+
+#Cumulative absolute error
+df <- df %>% group_by(user_id)%>%
+    arrange(user_id,game_id)%>%
+    mutate(cumulative_prediction_error = cumsum(prediction_error))%>%
     ungroup()
 
 df <- df %>% group_by(user_id)%>%
     arrange(user_id,game_id)%>%
     mutate(cumulative_squared_error = cumsum(squared_error))%>%
     ungroup()
-head(df)
+
 ```
 
 ```{r}
@@ -98,7 +122,8 @@ b1 <-df %>% group_by(game_id)%>%
     geom_boxplot()+
     geom_text_repel(aes(label=outlier),na.rm = TRUE)+
     labs(title = "Histogram of the Mean 
-    Prediction Error Per Game")+
+    Prediction Error Per Game",
+    subtitle = "Outlier Game ID displayed")+
     ylab("Mean Prediction Error")+
     theme_minimal()
 
@@ -110,24 +135,32 @@ b2 <-df %>% group_by(game_id)%>%
     geom_boxplot()+
     geom_text_repel(aes(label=outlier),na.rm = TRUE)+
     labs(title = "Histogram of the Mean
-    Prediction Error Per Game")+
+    Prediction Error Per Game.",
+    subtitle = "Outlier Game ID displayed")+
     ylab("RMSE")+
     theme_minimal()
+
 
 
 grid.arrange(b1,b2,ncol=2)
 head(df)
 ```
 
+Displaying Week 1 Leaderboard. All 20 weeks displayed in appendix!!!!!!!!!!
+Need to dynamically adjust leaderboard ot deal with ties at rank 20?
+If I had to pick a top 20, I pick smallest to display based on user_id (rewards loyalty)
+
 ```{r}
 #Task 2.1
 #Leaderboard
 #Do we need to print all twenty we get?
-df %>%group_by(week,user_id)%>%
+leaderboard<-df %>%group_by(week,user_id)%>%
     summarise(max_score = max(cumulative_score))%>%
-    mutate(rank = rank(max_score,ties.method="first"))%>%
+    mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
     arrange(week,rank)%>%
-    filter(rank<=20)
+    filter(rank<=20,week==1)
+
+knitr::kable(leaderboard)
 ```
 
 
@@ -137,50 +170,121 @@ df %>%group_by(week,user_id)%>%
 game_rank <- function(game_id_input,user_id_input){
     df %>%group_by(game_id,user_id)%>%
     summarise(max_score = max(cumulative_score))%>%
-    mutate(rank = rank(max_score,ties.method="first"))%>%
+    mutate(rank = rank(-max_score,ties.method="first"))%>% #minus to rank desc order
     arrange(game_id,rank)%>%
     filter(user_id==user_id_input & game_id==game_id_input)
 }
-game_rank(game_id_input=2,user_id_input=2)
+
+
+knitr::kable(game_rank(game_id_input=1,user_id_input=2))
 
 # Test if the rank stuff is working
 ```
 
 ```{r}
-#Task 3
-df %>% group_by(game_id)%>%
-    mutate(mean_error = mean(prediction_error),med_erro=median(prediction_error))%>%
-    ggplot(aes(x=game_id))+
-    geom_line(aes(y=med_erro-mean_error))
-    # geom_line(aes(y=med_erro))
-
-
-# Do you calculate the mean and median errors before or after grouping?
-
-# Looking at prediction errors?Or get mean and median predictions per game, 
-# then get prediction errors? so the "crowd" and "average" users are like user_ids??
-    
+head(df)
 ```
 
 
 ```{r}
+#Task 3
 
-head(df)
-df <- 
-df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,1,0))
-head(df)
+# v1
+# df %>% group_by(game_id)%>%
+#     mutate(mean_error = mean(prediction_error),med_erro=median(prediction_error))%>%
+#     ggplot(aes(x=game_id))+
+#     geom_line(aes(y=med_erro-mean_error))
+#     # geom_line(aes(y=med_erro))
+
+v2
+#get mean and median predictions per game
+#also calculate errors related to these prediction values
+pred_data<-df %>%select(game_id,home_predicted_margin,result)%>% 
+    group_by(game_id)%>%
+    arrange(game_id)%>%
+    mutate(mean_prediction = round(mean(home_predicted_margin),0) , #Whole number predictions
+           median_prediction = median(home_predicted_margin))%>%
+    mutate(error_related_to_mean = abs(mean_prediction-result),
+             error_related_to_median = abs(median_prediction -result))%>%
+    select(game_id,error_related_to_mean,error_related_to_median)%>%
+    distinct(game_id,error_related_to_mean,error_related_to_median)
+
+# pred_data %>% ggplot(aes(x=game_id))+
+#               geom_line(aes(y=error_related_to_median-error_related_to_mean,color="red"))
+#               # geom_line(aes(y=error_related_to_median,colour="red"))
+
+#Plot the prediction errors per game
+# pred_data %>% ggplot(aes(x=game_id))+
+#               geom_line(aes(y=error_related_to_mean,color="red"))+
+#               geom_line(aes(y=error_related_to_median,colour="blue"))
+
+#If the mean guess was always better, then we would have a clear trend of this being positive.
+# However, as we can see many fluctuations aruond 0, it doesn't look like this holds
+pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_related_to_mean
+
+# Bar Graph
+# pred_data %>% ggplot(aes(x=game_id,y=difference))+
+#               geom_bar(stat = "identity")
+
+#Line Graphs
+pred_data %>% ggplot(aes(x=game_id,y=difference))+
+              geom_line()
+
+#Table counting how many times the mean outperformed the median.
+pred_data["positive_diff"] <- ifelse(pred_data$difference>0,1,0)
+table(pred_data$positive_diff)
+# Does not look like wisdom of the crowd held
+```
+
+
+```{r}
+# Task 4
+# Identify if a prediction was a fan prediction
+df <- df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,1,0))
+
 
 #Average error for fan predicted games should be lower?or Higher?
-
-fans<-df%>%group_by(fan_pred)%>%
+fans <- df%>%group_by(game_id,fan_pred)%>%
     summarise(mean_error = mean(prediction_error))
+fans
 
-# T-Test? Different sample sizes?
+fans%>% ggplot(aes(x=game_id,y=mean_error,colour=as.factor(fan_pred)))+
+    geom_line()
+
+# Variance for fan prediction matches
+var(fans[fans$fan_pred==1,'mean_error'])
+
+# Variance for non fan predication matches
+var(fans[fans$fan_pred==0,'mean_error'])
+
+#Looks like fans predict their team better
+
+```
+
+```{r}
+head(df)
 ```
 
 
-```{r}
 
+```{r}
+# Task 5
+#120 games
+# See who the top 10 are at the halfway point
+# first_half <- 
+df%>% select(game_id,user_id,cumulative_prediction_error)%>%
+      filter(game_id==60)%>%
+      arrange(cumulative_prediction_error)%>%
+      head(5)
+
+
+df%>% select(game_id,user_id,cumulative_prediction_error)%>%
+      filter(game_id==120)%>%
+      arrange(cumulative_prediction_error)%>%
+      head(5)
+
+
+#Maybe compare the ranks at the different points?
 
 ```
 
