@@ -34,7 +34,7 @@ Copy the two data files into the same folder
 Open the file "STA5092_EDA_Assigment2.Rproj"
 Use the file explore to open "Yperumak EDA Assignment 2.Rmd"
 
-```{r}
+```{r include=FALSE}
 #Import Dat
 # Data in same folder as this file
 sup <-read_rds("./superbru-10k.Rds")
@@ -47,11 +47,9 @@ fixtures <- read_rds("./fixtures.rds")
 ```
 
 
-```{r}
-#Merge predictins and fixtures
+```{r include=FALSE}
+#Merge predictions and fixtures
 df <- sup %>% left_join(fixtures,by='game_id')
-dim(df)
-head(df)
 #Calculate prediction error
 df <-df %>% mutate(prediction_error = abs(home_predicted_margin-result))
 
@@ -61,7 +59,9 @@ df <- df %>% mutate(correct_result = ifelse(home_predicted_margin>0 & result>0,1
                                          ifelse(home_predicted_margin==0 & result==0,1,
                                          0))))
 ```
-```{r}
+
+
+```{r include=FALSE}
 #points allocation function Superbru
 points_alloc <- function(result,error){
     if(result==1 & error<=5){
@@ -76,16 +76,19 @@ points_alloc <- function(result,error){
     return(x)
 }
 
+# Apply the points allocation function
 df['points_scored'] <- mapply(df$correct_result,df$home_predicted_margin,FUN=points_alloc)
-tail(df)
+
 ```
-```{r}
-    # Adding my own measure of prediction accuray, squared errors
+
+
+```{r include=FALSE}
+# Adding my own measure of prediction accuracy, squared errors
 #Punishes the degree which you were wrong more
 df['squared_error'] <- (df$home_predicted_margin-df$result)^2
-head(df)
 ```
-```{r}
+
+```{r include=FALSE}
 # Cumulative points for each user after a game
 df <- df %>% group_by(user_id)%>%
     arrange(user_id,game_id)%>%
@@ -98,57 +101,71 @@ df <- df %>% group_by(user_id)%>%
     mutate(cumulative_prediction_error = cumsum(prediction_error))%>%
     ungroup()
 
+#Cumulative squared error
 df <- df %>% group_by(user_id)%>%
     arrange(user_id,game_id)%>%
     mutate(cumulative_squared_error = cumsum(squared_error))%>%
     ungroup()
-
 ```
 
-```{r}
+## Task 1 - Suprising Results
+* Some games are harder to predict than others. Find some way of assessing which games were most surprising or difficult to predict for the user base as a whole. Show your results using a plot.
+
+### If games are harder to predict, then prediction errors should be larger.Taking the mean prediction error per game, and then doing a boxplot allows us to find the outliers in terms of mean prediction error(and thus the games hardest to call)
+
+
+```{r echo=FALSE}
 # Task 1
-# If games are harder to predict, then prediction errors should be larger.Taking the mean prediction error per game, and then doing a boxplot allows us to find the outliersin terms of mean prediction error(and thus the games hardest to call)
-
-
+#Fuction to detect outliers in a boxplot
 is_outlier <- function(x) {
   return(x < quantile(x, 0.25) - 1.5 * IQR(x) | x > quantile(x, 0.75) + 1.5 * IQR(x))
 }
 
+# Create plot for mean abs error
 b1 <-df %>% group_by(game_id)%>%
     summarise(mean_pred_error=mean(prediction_error))%>%
     mutate(outlier = ifelse(is_outlier(mean_pred_error), 
                             game_id,as.numeric(NA))) %>%
     ggplot(aes(x=1,y=mean_pred_error))+
     geom_boxplot()+
-    geom_text_repel(aes(label=outlier),na.rm = TRUE)+
-    labs(title = "Histogram of the Mean 
-    Prediction Error Per Game",
+    geom_text_repel(aes(label=outlier),
+                    na.rm = TRUE,
+                    min.segment.length = 0,
+                    force = 3)+
+    labs(title = "Histogram of Mean Prediction Error Per Game",
     subtitle = "Outlier Game ID displayed")+
     ylab("Mean Prediction Error")+
     theme_minimal()
 
+# Create plot for root mean squared error
 b2 <-df %>% group_by(game_id)%>%
-    summarise(mean_sq_pred_error=sqrt(mean(squared_error)))%>%
+    summarise(mean_sq_pred_error=mean(squared_error))%>%
     mutate(outlier = ifelse(is_outlier(mean_sq_pred_error), 
                             game_id,as.numeric(NA))) %>%
     ggplot(aes(x=1,y=mean_sq_pred_error))+
     geom_boxplot()+
-    geom_text_repel(aes(label=outlier),na.rm = TRUE)+
-    labs(title = "Histogram of the Mean
-    Prediction Error Per Game.",
+    geom_text_repel(aes(label=outlier),
+                    na.rm = TRUE,
+                    min.segment.length = 0,
+                    force = 3)+
+    labs(title = "Histogram of Squared Prediction Error Per Game.",
     subtitle = "Outlier Game ID displayed")+
-    ylab("RMSE")+
+    ylab("MSE")+
     theme_minimal()
 
 
-
 grid.arrange(b1,b2,ncol=2)
-head(df)
 ```
 
-Displaying Week 1 Leaderboard. All 20 weeks displayed in appendix!!!!!!!!!!
-Need to dynamically adjust leaderboard ot deal with ties at rank 20?
-If I had to pick a top 20, I pick smallest to display based on user_id (rewards loyalty)
+## Task 2 - Make some Rankings
+
+### 2.1)
+* Construct a leaderboard showing the top 20 users after each week (this is something like what Superbru posts online.
+
+The leaderboard for Week 1 is displayed, while the full leaderboard for each week is included in the appendix.
+
+Ties are handled as follows:
+If I had to pick a top 20, I pick smallest to display based on user_id. These are users who signed up for Superbru earlier and their loyalty has earned them the priveldge of being displayed. In material terms it makes no difference to the actual points scored.
 
 ```{r}
 #Task 2.1
@@ -163,8 +180,12 @@ leaderboard<-df %>%group_by(week,user_id)%>%
 knitr::kable(leaderboard)
 ```
 
+### 2.2)
+* Provide code that will return any user’s rank (their position in the rank order from most accurate to least accurate) at any stage in the tournament (i.e. cumulatively, up to any game).
 
-```{r}
+We have provided the result for user_id 2 in game_id 35
+
+```{r echo=FALSE}
 # Task 2.2
 #Code to return rank at any time
 game_rank <- function(game_id_input,user_id_input){
@@ -176,15 +197,14 @@ game_rank <- function(game_id_input,user_id_input){
 }
 
 
-knitr::kable(game_rank(game_id_input=1,user_id_input=2))
+knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 
 # Test if the rank stuff is working
 ```
 
-```{r}
-head(df)
-```
+## Task 3 - Check for "the wisdom of the crowd"
 
+* Roughly, the “wisdom of the crowd” effect states that if you take a bunch of people and average their prediction, the result will often be pretty good. One way of interpreting this is that the crowd prediction (the average of everyone’s predictions) will be better than the median prediction (this representing an “average” user). Check if the wisdom of the crowd effect holds for these predictions (there are several ways to reasonably do this). Show your results using a plot.
 
 ```{r}
 #Task 3
@@ -236,6 +256,9 @@ table(pred_data$positive_diff)
 # Does not look like wisdom of the crowd held
 ```
 
+## Task 4 - Fan Effects
+
+You might expect fans of a team to be worse at predicting their team’s performance, because they’re biased. Or you might expect them to be better, because they keep up to date with information and know the team well. See if you can assess which one of these explanations is best supported by the data. You don’t need to use any statistical tests, although you can if you want. Show your results using a plot.
 
 ```{r}
 # Task 4
@@ -265,6 +288,11 @@ var(fans[fans$fan_pred==0,'mean_error'])
 head(df)
 ```
 
+## Task 5 Find the Experts
+
+* Are there “expert” forecasters? There are many ways of looking at this question. First, think of what expertise means in forecasting. I’d say there are two kinds of expertise: relative expertise and absolute expertise. Relative expertise just means you’re better than most other people. That doesn’t measure absolute quality though. Absolute expertise means that your predictions are in some objective sense good – but this needs some benchmark for defining good.
+
+The goal of this last section is to use the data to assess whether there is consistent good performance over time. To do this, you could divide your data into two periods: a first period that you use to select your experts, and a second period that you use to test whether your experts are actually any good. Again, show your results graphically.
 
 
 ```{r}
