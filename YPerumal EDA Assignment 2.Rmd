@@ -206,7 +206,7 @@ knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 
 * Roughly, the “wisdom of the crowd” effect states that if you take a bunch of people and average their prediction, the result will often be pretty good. One way of interpreting this is that the crowd prediction (the average of everyone’s predictions) will be better than the median prediction (this representing an “average” user). Check if the wisdom of the crowd effect holds for these predictions (there are several ways to reasonably do this). Show your results using a plot.
 
-```{r}
+```{r echo=FALSE}
 #Task 3
 
 # v1
@@ -216,7 +216,7 @@ knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 #     geom_line(aes(y=med_erro-mean_error))
 #     # geom_line(aes(y=med_erro))
 
-v2
+# v2
 #get mean and median predictions per game
 #also calculate errors related to these prediction values
 pred_data<-df %>%select(game_id,home_predicted_margin,result)%>% 
@@ -260,7 +260,7 @@ table(pred_data$positive_diff)
 
 You might expect fans of a team to be worse at predicting their team’s performance, because they’re biased. Or you might expect them to be better, because they keep up to date with information and know the team well. See if you can assess which one of these explanations is best supported by the data. You don’t need to use any statistical tests, although you can if you want. Show your results using a plot.
 
-```{r}
+```{r echo=FALSE}
 # Task 4
 # Identify if a prediction was a fan prediction
 df <- df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,1,0))
