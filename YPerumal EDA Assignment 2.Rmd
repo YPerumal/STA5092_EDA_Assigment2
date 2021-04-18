@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE,message = FALSE, warning = FALSE)
 ```
 
 ```{r include=FALSE}
@@ -17,12 +17,12 @@ library(gridExtra)
 ```
 
 
-This report aims to explore the two datasets "superbru-10k.Rds" and "fixtures.rds". These datasets contain information on predictions made users of the Superbru Super Rugby Fantasy league, and well as information on the fixtures that take place and their related results. 
-We then calculate how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
+This report aims to explore the two data sets: "superbru-10k.Rds" and "fixtures.rds". These data sets contain information on predictions made users of the Superbru Fantasy league, as well as information on the fixtures that take place and their related results. 
+Calculations are then performed to determine how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
 
-We then explore the data and attempt to answer various questions surrounding it.
+The data is then explored, and we attempt to answer various questions surrounding it.
 
-To check how accurate a prediction is,the absolute difference between the predicted and actual results is taken. Additionally, an indicator is created to signal if a prediction was correct or not. Using a combination of these, points are allocated as per the Superbru scoring rules.  
+To check how accurate a prediction is,the absolute difference between the predicted and actual results is taken. Additionally, an indicator is created to signal if a prediction was correct or not in terms of match results. Using a combination of these, points are allocated as per the Superbru scoring rules.  
 
 As an additional measure of prediction error, we calculate the squared prediction error.
 
@@ -32,10 +32,10 @@ As an additional measure of prediction error, we calculate the squared predictio
 Unzip the contents of the folder : "STA5092_EDA_Assigment2"
 Copy the two data files(superbru-10k.Rds and fixtures.Rds) into the same folder
 Open the file "STA5092_EDA_Assigment2.Rproj"
-Use the file explore to open "Yperumal EDA Assignment 2.Rmd"(Double check the working directory is set to current folder where this file was opened)
+Use the file explorer to open "Yperumal EDA Assignment 2.Rmd"(Double check the working directory is set to current folder where this file was opened)
 
 ```{r include=FALSE}
-#Import Dat
+#Import Data
 # Data in same folder as this file
 sup <-read_rds("./superbru-10k.Rds")
 fixtures <- read_rds("./fixtures.rds")
@@ -111,7 +111,7 @@ df <- df %>% group_by(user_id)%>%
 ## Task 1 - Suprising Results
 * Some games are harder to predict than others. Find some way of assessing which games were most surprising or difficult to predict for the user base as a whole. Show your results using a plot.
 
-### If games are harder to predict, then prediction errors should be larger.Taking the mean prediction error per game, and then doing a boxplot allows us to find the outliers in terms of mean prediction error(and thus the games hardest to call)
+If games are harder to predict, then prediction errors should be larger.Taking the mean prediction error per game, and then doing a boxplot allows us to find the outliers in terms of mean prediction error(and thus the games hardest to call). Comparisons are also made with the mean of squared errors, as well as the root mean squared errors.
 
 
 ```{r echo=FALSE}
@@ -125,15 +125,14 @@ is_outlier <- function(x) {
 b1 <-df %>% group_by(game_id)%>%
     summarise(mean_pred_error=mean(prediction_error))%>%
     mutate(outlier = ifelse(is_outlier(mean_pred_error), 
-                            game_id,as.numeric(NA))) %>%
+                            game_id,as.numeric(NA))) %>% #apply outlier function
     ggplot(aes(x=1,y=mean_pred_error))+
     geom_boxplot()+
     geom_text_repel(aes(label=outlier),
                     na.rm = TRUE,
                     min.segment.length = 0,
                     force = 3)+
-    labs(title = ~ atop(paste('Histogram of'),
-                              paste("Prediction Error Per Game")),
+    labs(title = ~ atop(paste('Histogram of'),paste("Prediction Error Per Game")),
     subtitle = "Outlier Game ID displayed")+
     ylab("Mean Prediction Error")+
     theme(plot.title = element_text(size = 10,hjust = 0.5),
@@ -143,15 +142,14 @@ b1 <-df %>% group_by(game_id)%>%
 b2 <-df %>% group_by(game_id)%>%
     summarise(mean_sq_pred_error=mean(squared_error))%>%
     mutate(outlier = ifelse(is_outlier(mean_sq_pred_error), 
-                            game_id,as.numeric(NA))) %>%
+                            game_id,as.numeric(NA))) %>% #apply outlier function
     ggplot(aes(x=1,y=mean_sq_pred_error))+
     geom_boxplot()+
     geom_text_repel(aes(label=outlier),
                     na.rm = TRUE,
                     min.segment.length = 0,
                     force = 3)+
-    labs(title = ~ atop(paste('Histogram of Mean Squared'),
-                              paste("Prediction Error Per Game")),
+    labs(title = ~ atop(paste('Histogram of Mean Squared'),paste("Prediction Error Per Game")),
     subtitle = "Outlier Game ID displayed")+
     ylab("MSE")+
       theme(plot.title = element_text(size = 10,hjust = 0.5),
@@ -161,15 +159,14 @@ b2 <-df %>% group_by(game_id)%>%
 b3 <-df %>% group_by(game_id)%>%
     summarise(mean_sq_pred_error=sqrt(mean(squared_error)))%>%
     mutate(outlier = ifelse(is_outlier(mean_sq_pred_error), 
-                            game_id,as.numeric(NA))) %>%
+                            game_id,as.numeric(NA))) %>% #apply outlier function
     ggplot(aes(x=1,y=mean_sq_pred_error))+
     geom_boxplot()+
     geom_text_repel(aes(label=outlier),
                     na.rm = TRUE,
                     min.segment.length = 0,
                     force = 3)+
-    labs(title = ~ atop(paste('Histogram of'),
-                              paste("RMSE Per Game")),
+    labs(title = ~ atop(paste('Histogram of'),paste("RMSE Per Game")),
     subtitle = "Outlier Game ID displayed")+
     ylab("RMSE")+
       theme(plot.title = element_text(size = 10,hjust = 0.5),
@@ -177,6 +174,7 @@ b3 <-df %>% group_by(game_id)%>%
 
 grid.arrange(b1,b2,b3,ncol=3)
 ```
+It appears that the matches with Game IDs of 29,32 and 2 were the most difficult to predict/surprising results wise. They appear as outliers in all 3 metrics
 
 ## Task 2 - Make some Rankings
 
@@ -186,7 +184,7 @@ grid.arrange(b1,b2,b3,ncol=3)
 The leaderboard for Week 1 is displayed, while the full leaderboard for each week is included in the appendix.
 
 Ties are handled as follows:
-If I had to pick a top 20, I pick smallest to display based on user_id. These are users who signed up for Superbru earlier and their loyalty has earned them the priveldge of being displayed. In material terms it makes no difference to the actual points scored.
+If I had to pick a top 20 scores dictate rankings first then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
 
 ```{r}
 #Task 2.1
@@ -204,7 +202,7 @@ knitr::kable(leaderboard)
 ### 2.2)
 * Provide code that will return any user’s rank (their position in the rank order from most accurate to least accurate) at any stage in the tournament (i.e. cumulatively, up to any game).
 
-We have provided the result for user_id 2 in game_id 35
+We have provided the result for user_id 2 in game_id 35. The code for the function is provided in the appendix.
 
 ```{r echo=FALSE}
 # Task 2.2
@@ -216,7 +214,6 @@ game_rank <- function(game_id_input,user_id_input){
     arrange(game_id,rank)%>%
     filter(user_id==user_id_input & game_id==game_id_input)
 }
-
 
 knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 
@@ -239,7 +236,7 @@ pred_data<-df %>%select(game_id,home_predicted_margin,result)%>%
     mutate(error_related_to_mean = abs(mean_prediction-result),
              error_related_to_median = abs(median_prediction -result))%>%
     select(game_id,error_related_to_mean,error_related_to_median)%>%
-    distinct(game_id,error_related_to_mean,error_related_to_median)
+    distinct(game_id,error_related_to_mean,error_related_to_median) #remove duplicates caused by user level data
 
 # Calculate difference between median and mean prediction errors
 pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_related_to_mean
@@ -254,25 +251,28 @@ pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_rela
 #               geom_line(aes(y=error_related_to_mean,color="red"))+
 #               geom_line(aes(y=error_related_to_median,colour="blue"))
 
-
-
-#If the mean guess was always better, then we would have more instances of the difference being positive.
-# However, as we can see many fluctuations around 0, it doesn't look like this holds
 # Plot the Difference
 pred_data %>% ggplot(aes(x=game_id,y=difference))+
               geom_line(color="blue")
-
-
 ```
-The graph above show the difference between the median prediction error and the mean prediction error. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress. 
+The graph above show the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress.
+
+To get a clearer picture of this, we determine how many instances the difference in these values is positive i.e. a "Wise" crowd. 
 
 ```{r}
 #Table counting how many times the mean outperformed the median.
 pred_data["positive_diff"] <- ifelse(pred_data$difference>0,"Wise Crowd","Unwise Crowd")
-knitr:: kable(table(pred_data$positive_diff))
+
+pred_data%>%ggplot(aes(x=positive_diff,))+
+      geom_bar()+
+      labs(title = "Frequency for Wise vs Unwise Crowd Predictions")+
+      xlab("Crowd Designation")+
+      ylab("Frequency")+
+      geom_text(stat='count', aes(label=..count..), vjust=-0.3)
+# knitr:: kable(table(pred_data$positive_diff))
 # Does not look like wisdom of the crowd held
 ```
-If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the average prediction outperformed the crowd's prediction.
+If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the median prediction outperformed the mean crowd's prediction.
 
 ## Task 4 - Fan Effects
 
@@ -283,19 +283,14 @@ You might expect fans of a team to be worse at predicting their team’s perform
 # Identify if a prediction was a fan prediction
 df <- df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,"Fan","Non-Fan"))
 
-
 #Average error for fan predicted games should be lower?or Higher?
 fans <- df%>%group_by(game_id,fan_pred)%>%
     summarise(mean_error = mean(prediction_error))
-fans
 
 fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     geom_line()
-
-
-
 ```
-The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. We can confirm this by looking at the variance for each subset of predictions"
+The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the variance for each subset of predictions"
 
 ```{r}
 # Variance for fan prediction matches
@@ -326,16 +321,59 @@ The goal of this last section is to use the data to assess whether there is cons
 #120 games
 # See who the top 10 are at the halfway point
 # first_half <- 
-df%>% select(game_id,user_id,cumulative_prediction_error)%>%
-      filter(game_id==60)%>%
-      arrange(cumulative_prediction_error)%>%
-      head(5)
+# df%>% select(game_id,user_id,cumulative_prediction_error)%>%
+#       filter(game_id==60)%>%
+#       arrange(cumulative_prediction_error)%>%
+#       head(5)
+# 
+# 
+# df%>% select(game_id,user_id,cumulative_prediction_error)%>%
+#       filter(game_id==120)%>%
+#       arrange(cumulative_prediction_error)%>%
+#       head(5)
+# 
 
 
-df%>% select(game_id,user_id,cumulative_prediction_error)%>%
-      filter(game_id==120)%>%
-      arrange(cumulative_prediction_error)%>%
-      head(5)
+
+
+
+
+
+# 18 weeks in the season 
+#rank per week for each user, first half of the season
+# s1<-df %>%group_by(week,user_id)%>%
+#     summarise(max_score = max(cumulative_score))%>%
+#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
+#     arrange(week,rank)%>%
+#     filter(week<=9)
+
+# top 5 users with the highest average rank after 1st half of the season
+# top_5s1 <-s1%>% group_by(user_id)%>%
+#       summarise(mr=mean(rank))%>%
+#       arrange(mr)%>%
+#       head(5)
+# top_5s1
+#
+# s2<-df %>% group_by(week,user_id)%>%
+#     summarise(max_score = max(cumulative_score))%>%
+#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
+#     arrange(week,rank)%>%
+#     filter(week>9)
+#
+# top_5s2 <-df%>% group_by(user_id)%>%
+#       summarise(mr=mean(rank))%>%
+#       arrange(mr)%>%
+#       head(5)
+#
+# top_5s2
+#
+# track_top5s2 <- df %>% filter(user_id %in% top_5s1$user_id)%>%
+#     group_by(week,user_id)%>%
+#     summarise(max_score = max(cumulative_score))%>%
+#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
+#     arrange(week,rank)%>%
+#     filter(week>9)
+
 
 
 #Maybe compare the ranks at the different points?
