@@ -302,10 +302,10 @@ fans <- df%>%group_by(game_id,fan_pred)%>%
 
 fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     geom_line()+
-    labs(title = "Plot Displaying Mean Absolute Error per Game of Fan vs Non Fan Predictions")+
+    labs(title = ~ atop(paste('Plot Displaying Mean Absolute Error per Game'),paste("of Fan vs Non Fan Predictions")))+
     xlab("Game ID")+
     ylab("Mean Absolute Error")+
-    theme(legend.title = element_blank())
+    theme(legend.title = element_blank(),plot.title = element_text(hjust = 0.5))
 ```
 The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the actual variance for each subset of predictions"
 
@@ -338,6 +338,7 @@ The goal of this last section is to use the data to assess whether there is cons
 
 
 To find our "experts" we have followed this approach:
+
 1. Split the data into two periods, the first 60 games and the second 60 games
 2. In the first 60 games we plot the cumulative points and cumulative error per user
 3. To determine our experts, we calculate the "error per point" ratio and highlight users with the lowest 100 value. This means for each point earned, this user was as close as could be with their prediction to the actual result.
@@ -346,6 +347,7 @@ To find our "experts" we have followed this approach:
 6. To find the "experts" we overlay the top 100 users from the second half of the season with those from the first to check if any user appears in the top 100 in both periods.
 
 The plots are displayed below:
+
 ```{r}
 # Task 5
 #120 games
@@ -362,11 +364,12 @@ first_half_top_100_users <- first_half%>%filter(top_100=="Top 100")%>%select(use
 # Plot first half of season
 s1 <- first_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               geom_point(aes(color=top_100))+
-              labs(title = "Scatterplot of Cumulative Points vs Cumulative Error per User, First 60 Games",
+              labs(title =  ~ atop(paste('Scatterplot of Cumulative Points vs Cumulative Error per User'),paste("First 60 Games")),
                    subtitle = "Users with 100 lowest error per point ratio highlighted")+
               xlab("Total Error")+
               ylab("Total Points")+
-              scale_color_discrete(name = "Error Per Point Rank")
+              scale_color_discrete(name = "Error Per Point Rank")+
+              theme(plot.title = element_text(hjust = 0.5))
 
 #Second half of the season
 second_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
@@ -380,11 +383,12 @@ second_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
 
 s2 <- second_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               geom_point(aes(color=combine_t100))+
-              labs(title = "Scatterplot of Cumulative Points vs Cumulative Error per User, Second 60 Games",
+              labs(title =  ~ atop(paste('Scatterplot of Cumulative Points vs Cumulative Error per User'),paste("Second 60 Games")),
                    subtitle = "Users with 100 lowest error per point ratio highlighted")+
               xlab("Total Error")+
               ylab("Total Points")+
-              scale_color_discrete(name = "Error Per Point Rank")
+              scale_color_discrete(name = "Error Per Point Rank")+
+              theme(plot.title = element_text(hjust = 0.5))
 
 s1
 ```
