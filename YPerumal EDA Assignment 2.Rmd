@@ -307,7 +307,8 @@ fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     ylab("Mean Absolute Error")+
     theme(legend.title = element_blank(),plot.title = element_text(hjust = 0.5))
 ```
-The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the actual variance for each subset of predictions:
+The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view. Even using the mean of squared errors(plotted in the appendix) does not provide obvious trends.
+However, by looking at the actual variance for each subset of predictions we can ascertain that a real difference does exist.
 
 ```{r}
 # Variance for fan prediction matches
@@ -436,5 +437,18 @@ knitr::kable(game_rank(game_id_input=35,user_id_input=2),
              caption = "User Rank at a Particular Game in the Season",
              align = "cccc",
              col.names = c("Game","User ID","Score","Rank"))
+```
+
+```{r}
+#Fan effects with Squared Error
+fans2 <- df%>%group_by(game_id,fan_pred)%>%
+    summarise(mean_sq_error = mean(squared_error))
+
+fans2%>% ggplot(aes(x=game_id,y=mean_sq_error,colour=fan_pred))+
+    geom_line()+
+    labs(title = ~ atop(paste('Plot Displaying Mean Squared Error per Game'),paste("of Fan vs Non Fan Predictions")))+
+    xlab("Game ID")+
+    ylab("Mean Squared Error")+
+    theme(legend.title = element_blank(),plot.title = element_text(hjust = 0.5))
 ```
 
