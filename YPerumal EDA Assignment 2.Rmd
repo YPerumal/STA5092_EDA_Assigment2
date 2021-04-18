@@ -18,7 +18,7 @@ library(gridExtra)
 
 ## Introduction
 
-This report aims to explore the two data sets: "superbru-10k.Rds" and "fixtures.rds". These data sets contain information on predictions made users of the Superbru Fantasy league, as well as information on the fixtures that take place and their related results. 
+This report aims to explore the two data sets: "superbru-10k.Rds" and "fixtures.rds". These data sets contain information on predictions made by users of the Superbru Fantasy League, as well as information on the fixtures that take place and their related results. 
 Calculations are then performed to determine how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
 
 The data is then explored, and we attempt to answer various questions surrounding it.
@@ -209,7 +209,7 @@ knitr::kable(leaderboard,
 ### 2.2)
 * Provide code that will return any user’s rank (their position in the rank order from most accurate to least accurate) at any stage in the tournament (i.e. cumulatively, up to any game).
 
-We have provided the result for user_id 2 in game_id 35. The code for the function is provided in the appendix.
+We have provided the result for user_id=2 in game_id=35. The code for the function is provided in the appendix.
 
 ```{r echo=FALSE}
 # Task 2.2
@@ -267,7 +267,7 @@ pred_data %>% ggplot(aes(x=game_id,y=difference))+
               geom_line(color="blue")+
               labs(title = "The Difference in Median and Mean Prediction Errors Over the Season")+xlab("Game ID")+ylab("Difference in Error Metrics")
 ```
-The graph above shows the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress through the season.
+The graph above shows the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 when plotting the difference as the games progress through the season.
 
 To get a clearer picture of this, we determine how many instances the difference in these values is positive i.e. a "Wise" crowd. 
 
@@ -284,7 +284,7 @@ pred_data%>%ggplot(aes(x=positive_diff,))+
 # knitr:: kable(table(pred_data$positive_diff))
 # Does not look like wisdom of the crowd held
 ```
-If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the  crowd's median prediction outperformed the crowd's mean  prediction.
+If we look at where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instances where the  crowd's median prediction outperformed the crowd's mean  prediction.
 \newpage
 
 ## Task 4 - Fan Effects
@@ -308,7 +308,7 @@ fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     theme(legend.title = element_blank(),plot.title = element_text(hjust = 0.5))
 ```
 The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view. Even using the mean of squared errors(plotted in the appendix) does not provide obvious trends.
-However, by looking at the actual variance for each subset of predictions we can ascertain that a real difference does exist.
+However, by looking at the actual variance for each subset of prediction errors we can ascertain that a real difference does exist.
 
 ```{r}
 # Variance for fan prediction matches
@@ -340,12 +340,12 @@ The goal of this last section is to use the data to assess whether there is cons
 
 To find our "experts" we have followed this approach:
 
-1. Split the data into two periods, the first 60 games and the second 60 games
+1. Split the data into two periods, the first 60 games and the second 60 games of the season
 2. In the first 60 games we plot the total points and total error per user
 3. To determine our experts, we calculate the "error per point" ratio for each user 
-4. The top 100 user IDs are highlighted. This means for each point earned, these users were as close as could be with their prediction to the actual result.
+4. The top 100 User IDs are highlighted. This means for each point earned, these users were as close as could be with their prediction to the actual result.
 5. A similar process followed in step 3 for the second 60 games of the season
-6. To find the "experts" we overlay the top 100 users from the second half of the season with those from the first to check if any user appears in the top 100 in both periods.
+6. To find the "experts" we overlay the top 100 users from the second half of the season with those from the first half to check if any user appears in the top 100 in both periods.
 
 The plots are displayed below:
 
@@ -370,7 +370,8 @@ s1 <- first_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               xlab("Total Error")+
               ylab("Total Points")+
               scale_color_discrete(name = "Error Per Point Rank")+
-              theme(plot.title = element_text(hjust = 0.5))
+              theme(plot.title = element_text(size = 11,hjust = 0.5),
+                    plot.subtitle = element_text(size = 8))
 
 #Second half of the season
 second_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
@@ -389,7 +390,8 @@ s2 <- second_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               xlab("Total Error")+
               ylab("Total Points")+
               scale_color_discrete(name = "Error Per Point Rank")+
-              theme(plot.title = element_text(hjust = 0.5))
+              theme(plot.title = element_text(size = 11,hjust = 0.5),
+                    plot.subtitle = element_text(size = 8))
 
 s1
 ```
