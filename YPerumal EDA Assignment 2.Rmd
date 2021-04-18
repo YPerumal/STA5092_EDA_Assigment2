@@ -136,7 +136,8 @@ b1 <-df %>% group_by(game_id)%>%
     subtitle = "Outlier Game ID displayed")+
     ylab("Mean Prediction Error")+
     theme(plot.title = element_text(size = 10,hjust = 0.5),
-          plot.subtitle = element_text(size = 8))
+          plot.subtitle = element_text(size = 8),
+          axis.title.x=element_blank())
 
 # Create plot for root mean squared error
 b2 <-df %>% group_by(game_id)%>%
@@ -153,7 +154,8 @@ b2 <-df %>% group_by(game_id)%>%
     subtitle = "Outlier Game ID displayed")+
     ylab("MSE")+
       theme(plot.title = element_text(size = 10,hjust = 0.5),
-          plot.subtitle = element_text(size = 8))
+          plot.subtitle = element_text(size = 8),
+          axis.title.x=element_blank())
 
 
 b3 <-df %>% group_by(game_id)%>%
@@ -170,7 +172,8 @@ b3 <-df %>% group_by(game_id)%>%
     subtitle = "Outlier Game ID displayed")+
     ylab("RMSE")+
       theme(plot.title = element_text(size = 10,hjust = 0.5),
-          plot.subtitle = element_text(size = 8))
+          plot.subtitle = element_text(size = 8),
+          axis.title.x=element_blank())
 
 grid.arrange(b1,b2,b3,ncol=3)
 ```
@@ -186,6 +189,7 @@ The leaderboard for Week 1 is displayed, while the full leaderboard for each wee
 Ties are handled as follows:
 If I had to pick a top 20 scores dictate rankings first then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
 
+\newpage
 ```{r}
 #Task 2.1
 #Leaderboard
@@ -196,7 +200,11 @@ leaderboard<-df %>%group_by(week,user_id)%>%
     arrange(week,rank)%>%
     filter(rank<=20,week==1)
 
-knitr::kable(leaderboard)
+knitr::kable(leaderboard,
+             caption = "Superbru Top 20 Leaderboard",
+             align = "lccc",
+             booktabs = TRUE,
+             col.names = c("Week","User ID","Score","Rank"))
 ```
 
 ### 2.2)
@@ -215,7 +223,10 @@ game_rank <- function(game_id_input,user_id_input){
     filter(user_id==user_id_input & game_id==game_id_input)
 }
 
-knitr::kable(game_rank(game_id_input=35,user_id_input=2))
+knitr::kable(game_rank(game_id_input=35,user_id_input=2),
+             caption = "User Rank at a Particular Game in the Season",
+             align = "cccc",
+             col.names = c("Game","User ID","Score","Rank"))
 
 ```
 
@@ -253,7 +264,8 @@ pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_rela
 
 # Plot the Difference
 pred_data %>% ggplot(aes(x=game_id,y=difference))+
-              geom_line(color="blue")
+              geom_line(color="blue")+
+              labs(title = "The Difference in Median and Mean Prediction Errors Over the Season")+xlab("Game ID")+ylab("Difference in Error Metrics")
 ```
 The graph above show the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress.
 
@@ -288,24 +300,32 @@ fans <- df%>%group_by(game_id,fan_pred)%>%
     summarise(mean_error = mean(prediction_error))
 
 fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
-    geom_line()
+    geom_line()+
+    labs(title = "Plot Displaying Mean Aboslute Error per Game of Fan vs Non Fan Predictions")+
+    xlab("Game ID")+
+    ylab("Mean Absolute Error")+
+    theme(legend.title = element_blank())
 ```
 The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the variance for each subset of predictions"
 
 ```{r}
 # Variance for fan prediction matches
-fan_var = var(fans[fans$fan_pred=="Fan",'mean_error'])
-print(paste("Error Variance for games predicted by fans:",round(fan_var,2)))
+fan_var = round(var(fans[fans$fan_pred=="Fan",'mean_error']),2)
+
 # Variance for non fan predication matches
-non_fan_var=var(fans[fans$fan_pred=="Non-Fan",'mean_error'])
-print(paste("Error Variance for games not predicted by fans:",round(non_fan_var,2)))
+non_fan_var=round(var(fans[fans$fan_pred=="Non-Fan",'mean_error']),2)
+
 #Looks like fans predict their team better
 ```
+
+### Error Variance for games predicted by fans:`r fan_var`
+### Error Variance for games predicted by fans:`r non_fan_var`
+`
 Games predicted by fans have a lower variance in their error, and therefore appear to be more dialed in to the accurate results,indicating fans are able to make better predictions for the teams they support.
 
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 head(df)
 ```
 
@@ -378,5 +398,38 @@ The goal of this last section is to use the data to assess whether there is cons
 
 #Maybe compare the ranks at the different points?
 
+```
+
+
+## Appendix
+
+```{r Full Leaderboard, eval=FALSE, include=FALSE}
+leaderboard<-df %>%group_by(week,user_id)%>%
+    summarise(max_score = max(cumulative_score))%>%
+    mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
+    arrange(week,rank)%>%
+    filter(rank<=20)
+
+knitr::kable(leaderboard,
+             caption = "Superbru Top 20 Leaderboard",
+             align = "lccc",
+             booktabs = TRUE,
+             col.names = c("Week","User ID","Score","Rank"))
+```
+
+```{r echo=TRUE}
+#Code to return rank at any time
+game_rank <- function(game_id_input,user_id_input){
+    df %>%group_by(game_id,user_id)%>%
+    summarise(max_score = max(cumulative_score))%>%
+    mutate(rank = rank(-max_score,ties.method="first"))%>% #minus to rank desc order
+    arrange(game_id,rank)%>%
+    filter(user_id==user_id_input & game_id==game_id_input)
+}
+
+knitr::kable(game_rank(game_id_input=35,user_id_input=2),
+             caption = "User Rank at a Particular Game in the Season",
+             align = "cccc",
+             col.names = c("Game","User ID","Score","Rank"))
 ```
 
