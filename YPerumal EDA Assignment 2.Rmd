@@ -321,7 +321,7 @@ non_fan_var=round(var(fans[fans$fan_pred=="Non-Fan",'mean_error']),2)
 ```
 
 ### Error Variance for games predicted by fans: `r fan_var`
-### Error Variance for games predicted by fans: `r non_fan_var`
+### Error Variance for games predicted by non-fans: `r non_fan_var`
 
 Games predicted by fans have a lower variance in their errors, and therefore appear to be more dialed in to produce accurate results,indicating fans are able to make better predictions for the teams they support.
 
