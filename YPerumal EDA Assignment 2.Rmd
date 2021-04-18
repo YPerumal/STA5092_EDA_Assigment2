@@ -1,7 +1,7 @@
 ---
 title: "EDA Assignment 2"
 author: "Yevashan Perumal"
-date: "14/04/2021"
+date: "18/04/2021"
 output: pdf_document
 ---
 
@@ -16,6 +16,7 @@ library(ggrepel)
 library(gridExtra)
 ```
 
+## Introduction
 
 This report aims to explore the two data sets: "superbru-10k.Rds" and "fixtures.rds". These data sets contain information on predictions made users of the Superbru Fantasy league, as well as information on the fixtures that take place and their related results. 
 Calculations are then performed to determine how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
@@ -26,13 +27,11 @@ To check how accurate a prediction is,the absolute difference between the predic
 
 As an additional measure of prediction error, we calculate the squared prediction error.
 
-
-
-### Instructions to run this script
-Unzip the contents of the folder : "STA5092_EDA_Assigment2"
-Copy the two data files(superbru-10k.Rds and fixtures.Rds) into the same folder
-Open the file "STA5092_EDA_Assigment2.Rproj"
-Use the file explorer to open "Yperumal EDA Assignment 2.Rmd"(Double check the working directory is set to current folder where this file was opened)
+### Instructions to run this script to reproduce results in this report:
+* Unzip the contents of the folder : "STA5092_EDA_Assignment2"
+* Copy the two data files(superbru-10k.Rds and fixtures.Rds) into the same folder
+* Open the file "STA5092_EDA_Assignment2.Rproj"
+* Use the file explorer to open "Yperumal EDA Assignment 2.Rmd"(Double check the working directory is set to current folder where this file was opened)
 
 ```{r include=FALSE}
 #Import Data
@@ -107,7 +106,7 @@ df <- df %>% group_by(user_id)%>%
     mutate(cumulative_squared_error = cumsum(squared_error))%>%
     ungroup()
 ```
-
+\newpage
 ## Task 1 - Suprising Results
 * Some games are harder to predict than others. Find some way of assessing which games were most surprising or difficult to predict for the user base as a whole. Show your results using a plot.
 
@@ -178,6 +177,7 @@ b3 <-df %>% group_by(game_id)%>%
 grid.arrange(b1,b2,b3,ncol=3)
 ```
 It appears that the matches with Game IDs of 29,32 and 2 were the most difficult to predict/surprising results wise. They appear as outliers in all 3 metrics
+\newpage
 
 ## Task 2 - Make some Rankings
 
@@ -187,9 +187,8 @@ It appears that the matches with Game IDs of 29,32 and 2 were the most difficult
 The leaderboard for Week 1 is displayed, while the full leaderboard for each week is included in the appendix.
 
 Ties are handled as follows:
-If I had to pick a top 20 scores dictate rankings first then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
+If I had to pick a top 20, scores dictate rankings first. Then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
 
-\newpage
 ```{r}
 #Task 2.1
 #Leaderboard
@@ -229,6 +228,7 @@ knitr::kable(game_rank(game_id_input=35,user_id_input=2),
              col.names = c("Game","User ID","Score","Rank"))
 
 ```
+\newpage
 
 ## Task 3 - Check for "the wisdom of the crowd"
 
@@ -285,6 +285,7 @@ pred_data%>%ggplot(aes(x=positive_diff,))+
 # Does not look like wisdom of the crowd held
 ```
 If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the median prediction outperformed the mean crowd's prediction.
+\newpage
 
 ## Task 4 - Fan Effects
 
@@ -301,12 +302,12 @@ fans <- df%>%group_by(game_id,fan_pred)%>%
 
 fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     geom_line()+
-    labs(title = "Plot Displaying Mean Aboslute Error per Game of Fan vs Non Fan Predictions")+
+    labs(title = "Plot Displaying Mean Absolute Error per Game of Fan vs Non Fan Predictions")+
     xlab("Game ID")+
     ylab("Mean Absolute Error")+
     theme(legend.title = element_blank())
 ```
-The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the variance for each subset of predictions"
+The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the actual variance for each subset of predictions"
 
 ```{r}
 # Variance for fan prediction matches
@@ -318,8 +319,8 @@ non_fan_var=round(var(fans[fans$fan_pred=="Non-Fan",'mean_error']),2)
 #Looks like fans predict their team better
 ```
 
-### Error Variance for games predicted by fans:`r fan_var`
-### Error Variance for games predicted by fans:`r non_fan_var`
+### Error Variance for games predicted by fans: `r fan_var`
+### Error Variance for games predicted by fans: `r non_fan_var`
 `
 Games predicted by fans have a lower variance in their error, and therefore appear to be more dialed in to the accurate results,indicating fans are able to make better predictions for the teams they support.
 
@@ -328,7 +329,7 @@ Games predicted by fans have a lower variance in their error, and therefore appe
 ```{r eval=FALSE, include=FALSE}
 head(df)
 ```
-
+\newpage
 ## Task 5 Find the Experts
 
 * Are there “expert” forecasters? There are many ways of looking at this question. First, think of what expertise means in forecasting. I’d say there are two kinds of expertise: relative expertise and absolute expertise. Relative expertise just means you’re better than most other people. That doesn’t measure absolute quality though. Absolute expertise means that your predictions are in some objective sense good – but this needs some benchmark for defining good.
@@ -336,68 +337,67 @@ head(df)
 The goal of this last section is to use the data to assess whether there is consistent good performance over time. To do this, you could divide your data into two periods: a first period that you use to select your experts, and a second period that you use to test whether your experts are actually any good. Again, show your results graphically.
 
 
+To find our "experts" we have followed this approach:
+1. Split the data into two periods, the first 60 games and the second 60 games
+2. In the first 60 games we plot the cumulative points and cumulative error per user
+3. To determine our experts, we calculate the "error per point" ratio and highlight users with the lowest 100 value. This means for each point earned, this user was as close as could be with their prediction to the actual result.
+4. The top 100 user IDs are noted
+5. A similar process followed in step 3 for the second 6 games of the season
+6. To find the "experts" we overlay the top 100 users from the second half of the season with those from the first to check if any user appears in the top 100 in both periods.
+
+The plots are displayed below:
 ```{r}
 # Task 5
 #120 games
-# See who the top 10 are at the halfway point
-# first_half <- 
-# df%>% select(game_id,user_id,cumulative_prediction_error)%>%
-#       filter(game_id==60)%>%
-#       arrange(cumulative_prediction_error)%>%
-#       head(5)
-# 
-# 
-# df%>% select(game_id,user_id,cumulative_prediction_error)%>%
-#       filter(game_id==120)%>%
-#       arrange(cumulative_prediction_error)%>%
-#       head(5)
-# 
+first_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
+      filter(game_id<=60) %>%
+      group_by(user_id)%>%
+      summarise(total_points=sum(points_scored),total_abs_error=sum(prediction_error))%>%
+      mutate(error_per_point = total_abs_error/total_points)%>% #eror per points ratio
+      mutate(top_100 = ifelse(rank(error_per_point)<=100,"Top 100","The Rest")) #mark top 100
 
+#Get top 100 user ids to compare in second half of season
+first_half_top_100_users <- first_half%>%filter(top_100=="Top 100")%>%select(user_id)
 
+# Plot first half of season
+s1 <- first_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
+              geom_point(aes(color=top_100))+
+              labs(title = "Scatterplot of Cumulative Points vs Cumulative Error per User, First 60 Games",
+                   subtitle = "Users with 100 lowest error per point ratio highlighted")+
+              xlab("Total Error")+
+              ylab("Total Points")+
+              scale_color_discrete(name = "Error Per Point Rank")
 
+#Second half of the season
+second_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
+      filter(game_id>60) %>%
+      group_by(user_id)%>%
+      summarise(total_points=sum(points_scored),total_abs_error=sum(prediction_error))%>%
+      mutate(error_per_point = total_abs_error/total_points)%>%
+      mutate(top_100 = ifelse(rank(error_per_point)<=100,"Top 100","The Rest"))%>%
+      mutate(first_half_top_100 = ifelse(user_id %in% first_half_top_100_users$user_id,1,0))%>% #indictor for top 100 users from first half of season
+      mutate(combine_t100 = ifelse(top_100=="Top 100"& first_half_top_100==1,"Expert",top_100)) #Combined indicator of top 100 to check if any users repeat from first half
 
+s2 <- second_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
+              geom_point(aes(color=combine_t100))+
+              labs(title = "Scatterplot of Cumulative Points vs Cumulative Error per User, Second 60 Games",
+                   subtitle = "Users with 100 lowest error per point ratio highlighted")+
+              xlab("Total Error")+
+              ylab("Total Points")+
+              scale_color_discrete(name = "Error Per Point Rank")
 
+s1
+```
 
+```{r}
+s2
+```
 
-# 18 weeks in the season 
-#rank per week for each user, first half of the season
-# s1<-df %>%group_by(week,user_id)%>%
-#     summarise(max_score = max(cumulative_score))%>%
-#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
-#     arrange(week,rank)%>%
-#     filter(week<=9)
-
-# top 5 users with the highest average rank after 1st half of the season
-# top_5s1 <-s1%>% group_by(user_id)%>%
-#       summarise(mr=mean(rank))%>%
-#       arrange(mr)%>%
-#       head(5)
-# top_5s1
-#
-# s2<-df %>% group_by(week,user_id)%>%
-#     summarise(max_score = max(cumulative_score))%>%
-#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
-#     arrange(week,rank)%>%
-#     filter(week>9)
-#
-# top_5s2 <-df%>% group_by(user_id)%>%
-#       summarise(mr=mean(rank))%>%
-#       arrange(mr)%>%
-#       head(5)
-#
-# top_5s2
-#
-# track_top5s2 <- df %>% filter(user_id %in% top_5s1$user_id)%>%
-#     group_by(week,user_id)%>%
-#     summarise(max_score = max(cumulative_score))%>%
-#     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
-#     arrange(week,rank)%>%
-#     filter(week>9)
-
-
-
-#Maybe compare the ranks at the different points?
-
+It appears that experts to exist; However, they appear to be a very rare commodity as shown in the table below.
+```{r}
+knitr::kable(table(second_half$combine_t100),
+             caption = "Breakdown of Top 100, Second 60 Games",
+             col.names = c("Category","No. of Users"))
 ```
 
 
