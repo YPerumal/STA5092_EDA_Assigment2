@@ -187,7 +187,7 @@ It appears that the matches with Game IDs of 29,32 and 2 were the most difficult
 The leaderboard for Week 1 is displayed, while the full leaderboard for each week is included in the appendix.
 
 Ties are handled as follows:
-If I had to pick a top 20, scores dictate rankings first. Then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
+If a top 20 is to be picked,points scored dictate rankings first. Then we display based on smallest user_id value. These are users who signed up for Superbru earlier, and their loyalty has earned them the privilege of being displayed. In material terms it makes no difference to the actual points scored.
 
 ```{r}
 #Task 2.1
@@ -267,7 +267,7 @@ pred_data %>% ggplot(aes(x=game_id,y=difference))+
               geom_line(color="blue")+
               labs(title = "The Difference in Median and Mean Prediction Errors Over the Season")+xlab("Game ID")+ylab("Difference in Error Metrics")
 ```
-The graph above show the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress.
+The graph above shows the difference between the median prediction error and the mean prediction error per game. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the prediction error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress through the season.
 
 To get a clearer picture of this, we determine how many instances the difference in these values is positive i.e. a "Wise" crowd. 
 
@@ -284,7 +284,7 @@ pred_data%>%ggplot(aes(x=positive_diff,))+
 # knitr:: kable(table(pred_data$positive_diff))
 # Does not look like wisdom of the crowd held
 ```
-If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the median prediction outperformed the mean crowd's prediction.
+If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the  crowd's median prediction outperformed the crowd's mean  prediction.
 \newpage
 
 ## Task 4 - Fan Effects
@@ -307,7 +307,7 @@ fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     ylab("Mean Absolute Error")+
     theme(legend.title = element_blank(),plot.title = element_text(hjust = 0.5))
 ```
-The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the actual variance for each subset of predictions"
+The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. However, it is difficult to draw substantial conclusions from this view.We can confirm this by looking at the actual variance for each subset of predictions:
 
 ```{r}
 # Variance for fan prediction matches
@@ -321,8 +321,8 @@ non_fan_var=round(var(fans[fans$fan_pred=="Non-Fan",'mean_error']),2)
 
 ### Error Variance for games predicted by fans: `r fan_var`
 ### Error Variance for games predicted by fans: `r non_fan_var`
-`
-Games predicted by fans have a lower variance in their error, and therefore appear to be more dialed in to the accurate results,indicating fans are able to make better predictions for the teams they support.
+
+Games predicted by fans have a lower variance in their errors, and therefore appear to be more dialed in to produce accurate results,indicating fans are able to make better predictions for the teams they support.
 
 
 
@@ -340,10 +340,10 @@ The goal of this last section is to use the data to assess whether there is cons
 To find our "experts" we have followed this approach:
 
 1. Split the data into two periods, the first 60 games and the second 60 games
-2. In the first 60 games we plot the cumulative points and cumulative error per user
-3. To determine our experts, we calculate the "error per point" ratio and highlight users with the lowest 100 value. This means for each point earned, this user was as close as could be with their prediction to the actual result.
-4. The top 100 user IDs are noted
-5. A similar process followed in step 3 for the second 6 games of the season
+2. In the first 60 games we plot the total points and total error per user
+3. To determine our experts, we calculate the "error per point" ratio for each user 
+4. The top 100 user IDs are highlighted. This means for each point earned, these users were as close as could be with their prediction to the actual result.
+5. A similar process followed in step 3 for the second 60 games of the season
 6. To find the "experts" we overlay the top 100 users from the second half of the season with those from the first to check if any user appears in the top 100 in both periods.
 
 The plots are displayed below:
@@ -364,7 +364,7 @@ first_half_top_100_users <- first_half%>%filter(top_100=="Top 100")%>%select(use
 # Plot first half of season
 s1 <- first_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               geom_point(aes(color=top_100))+
-              labs(title =  ~ atop(paste('Scatterplot of Cumulative Points vs Cumulative Error per User'),paste("First 60 Games")),
+              labs(title =  ~ atop(paste('Scatterplot of Total Points vs Total Error per User'),paste("First 60 Games")),
                    subtitle = "Users with 100 lowest error per point ratio highlighted")+
               xlab("Total Error")+
               ylab("Total Points")+
@@ -383,7 +383,7 @@ second_half <-df%>% select(game_id,user_id,prediction_error,points_scored)%>%
 
 s2 <- second_half%>%ggplot(aes(y=total_points,x=total_abs_error))+
               geom_point(aes(color=combine_t100))+
-              labs(title =  ~ atop(paste('Scatterplot of Cumulative Points vs Cumulative Error per User'),paste("Second 60 Games")),
+              labs(title =  ~ atop(paste('Scatterplot of Total Points vs Total Error per User'),paste("Second 60 Games")),
                    subtitle = "Users with 100 lowest error per point ratio highlighted")+
               xlab("Total Error")+
               ylab("Total Points")+
@@ -404,10 +404,11 @@ knitr::kable(table(second_half$combine_t100),
              col.names = c("Category","No. of Users"))
 ```
 
+\newpage
 
 ## Appendix
 
-```{r Full Leaderboard, eval=FALSE, include=FALSE}
+```{r Full Leaderboard, echo=FALSE}
 leaderboard<-df %>%group_by(week,user_id)%>%
     summarise(max_score = max(cumulative_score))%>%
     mutate(rank = rank(-max_score,ties.method="first"))%>% #Minus score to rank desc order
