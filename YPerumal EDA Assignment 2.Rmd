@@ -17,22 +17,22 @@ library(gridExtra)
 ```
 
 
-This report aimns to explore the two datasets "superbru-10k.Rds" and "fixtures.rds". These datasets contain information on predictions made users of the Superbru Super Rugby Fantasy league, and well as information on the fixutres that take place and their related results. 
+This report aims to explore the two datasets "superbru-10k.Rds" and "fixtures.rds". These datasets contain information on predictions made users of the Superbru Super Rugby Fantasy league, and well as information on the fixtures that take place and their related results. 
 We then calculate how close the predictions were to the actual results, as well as allocating points to the users as per the Superbru scoring rules.
 
 We then explore the data and attempt to answer various questions surrounding it.
 
-To allocation points, we take the absolute difference between the predicted and actual results. 
+To check how accurate a prediction is,the absolute difference between the predicted and actual results is taken. Additionally, an indicator is created to signal if a prediction was correct or not. Using a combination of these, points are allocated as per the Superbru scoring rules.  
 
 As an additional measure of prediction error, we calculate the squared prediction error.
 
 
 
 ### Instructions to run this script
-# Unzip the contents of the folder : ""
-Copy the two data files into the same folder
+Unzip the contents of the folder : "STA5092_EDA_Assigment2"
+Copy the two data files(superbru-10k.Rds and fixtures.Rds) into the same folder
 Open the file "STA5092_EDA_Assigment2.Rproj"
-Use the file explore to open "Yperumak EDA Assignment 2.Rmd"
+Use the file explore to open "Yperumal EDA Assignment 2.Rmd"(Double check the working directory is set to current folder where this file was opened)
 
 ```{r include=FALSE}
 #Import Dat
@@ -132,10 +132,12 @@ b1 <-df %>% group_by(game_id)%>%
                     na.rm = TRUE,
                     min.segment.length = 0,
                     force = 3)+
-    labs(title = "Histogram of Mean Prediction Error Per Game",
+    labs(title = ~ atop(paste('Histogram of'),
+                              paste("Prediction Error Per Game")),
     subtitle = "Outlier Game ID displayed")+
     ylab("Mean Prediction Error")+
-    theme_minimal()
+    theme(plot.title = element_text(size = 10,hjust = 0.5),
+          plot.subtitle = element_text(size = 8))
 
 # Create plot for root mean squared error
 b2 <-df %>% group_by(game_id)%>%
@@ -148,13 +150,32 @@ b2 <-df %>% group_by(game_id)%>%
                     na.rm = TRUE,
                     min.segment.length = 0,
                     force = 3)+
-    labs(title = "Histogram of Squared Prediction Error Per Game.",
+    labs(title = ~ atop(paste('Histogram of Mean Squared'),
+                              paste("Prediction Error Per Game")),
     subtitle = "Outlier Game ID displayed")+
     ylab("MSE")+
-    theme_minimal()
+      theme(plot.title = element_text(size = 10,hjust = 0.5),
+          plot.subtitle = element_text(size = 8))
 
 
-grid.arrange(b1,b2,ncol=2)
+b3 <-df %>% group_by(game_id)%>%
+    summarise(mean_sq_pred_error=sqrt(mean(squared_error)))%>%
+    mutate(outlier = ifelse(is_outlier(mean_sq_pred_error), 
+                            game_id,as.numeric(NA))) %>%
+    ggplot(aes(x=1,y=mean_sq_pred_error))+
+    geom_boxplot()+
+    geom_text_repel(aes(label=outlier),
+                    na.rm = TRUE,
+                    min.segment.length = 0,
+                    force = 3)+
+    labs(title = ~ atop(paste('Histogram of'),
+                              paste("RMSE Per Game")),
+    subtitle = "Outlier Game ID displayed")+
+    ylab("RMSE")+
+      theme(plot.title = element_text(size = 10,hjust = 0.5),
+          plot.subtitle = element_text(size = 8))
+
+grid.arrange(b1,b2,b3,ncol=3)
 ```
 
 ## Task 2 - Make some Rankings
@@ -199,7 +220,6 @@ game_rank <- function(game_id_input,user_id_input){
 
 knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 
-# Test if the rank stuff is working
 ```
 
 ## Task 3 - Check for "the wisdom of the crowd"
@@ -209,15 +229,7 @@ knitr::kable(game_rank(game_id_input=35,user_id_input=2))
 ```{r echo=FALSE}
 #Task 3
 
-# v1
-# df %>% group_by(game_id)%>%
-#     mutate(mean_error = mean(prediction_error),med_erro=median(prediction_error))%>%
-#     ggplot(aes(x=game_id))+
-#     geom_line(aes(y=med_erro-mean_error))
-#     # geom_line(aes(y=med_erro))
-
-# v2
-#get mean and median predictions per game
+# Get mean and median predictions per game
 #also calculate errors related to these prediction values
 pred_data<-df %>%select(game_id,home_predicted_margin,result)%>% 
     group_by(game_id)%>%
@@ -229,6 +241,10 @@ pred_data<-df %>%select(game_id,home_predicted_margin,result)%>%
     select(game_id,error_related_to_mean,error_related_to_median)%>%
     distinct(game_id,error_related_to_mean,error_related_to_median)
 
+# Calculate difference between median and mean prediction errors
+pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_related_to_mean
+
+# Plot the Errors
 # pred_data %>% ggplot(aes(x=game_id))+
 #               geom_line(aes(y=error_related_to_median-error_related_to_mean,color="red"))
 #               # geom_line(aes(y=error_related_to_median,colour="red"))
@@ -238,23 +254,25 @@ pred_data<-df %>%select(game_id,home_predicted_margin,result)%>%
 #               geom_line(aes(y=error_related_to_mean,color="red"))+
 #               geom_line(aes(y=error_related_to_median,colour="blue"))
 
-#If the mean guess was always better, then we would have a clear trend of this being positive.
-# However, as we can see many fluctuations aruond 0, it doesn't look like this holds
-pred_data["difference"] = pred_data$error_related_to_median-pred_data$error_related_to_mean
 
-# Bar Graph
-# pred_data %>% ggplot(aes(x=game_id,y=difference))+
-#               geom_bar(stat = "identity")
 
-#Line Graphs
+#If the mean guess was always better, then we would have more instances of the difference being positive.
+# However, as we can see many fluctuations around 0, it doesn't look like this holds
+# Plot the Difference
 pred_data %>% ggplot(aes(x=game_id,y=difference))+
-              geom_line()
+              geom_line(color="blue")
 
+
+```
+The graph above show the difference between the median prediction error and the mean prediction error. If the mean prediction(i.e. the wisdom of the crowds) is better than the average(given by the median), then the error for the median should always be larger, and thus the difference between the two values per game should have more values that are positive than not. However, we see many fluctuations around 0 as the games progress. 
+
+```{r}
 #Table counting how many times the mean outperformed the median.
-pred_data["positive_diff"] <- ifelse(pred_data$difference>0,1,0)
-table(pred_data$positive_diff)
+pred_data["positive_diff"] <- ifelse(pred_data$difference>0,"Wise Crowd","Unwise Crowd")
+knitr:: kable(table(pred_data$positive_diff))
 # Does not look like wisdom of the crowd held
 ```
+If we look at the actual frequency of where the difference was positive and apply the logic above, it appears the wisdom of the crowd does not hold as there are many more instance where the average prediction outperformed the crowd's prediction.
 
 ## Task 4 - Fan Effects
 
@@ -263,7 +281,7 @@ You might expect fans of a team to be worse at predicting their team’s perform
 ```{r echo=FALSE}
 # Task 4
 # Identify if a prediction was a fan prediction
-df <- df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,1,0))
+df <- df%>%mutate(fan_pred = ifelse(user_team_id==home | user_team_id==away,"Fan","Non-Fan"))
 
 
 #Average error for fan predicted games should be lower?or Higher?
@@ -271,18 +289,26 @@ fans <- df%>%group_by(game_id,fan_pred)%>%
     summarise(mean_error = mean(prediction_error))
 fans
 
-fans%>% ggplot(aes(x=game_id,y=mean_error,colour=as.factor(fan_pred)))+
+fans%>% ggplot(aes(x=game_id,y=mean_error,colour=fan_pred))+
     geom_line()
 
-# Variance for fan prediction matches
-var(fans[fans$fan_pred==1,'mean_error'])
 
-# Variance for non fan predication matches
-var(fans[fans$fan_pred==0,'mean_error'])
-
-#Looks like fans predict their team better
 
 ```
+The figure above plots the average error for fan predictions vs non fan predictions per game. It appears that fan prediction have slightly less variability in the errors and therefore may be slightly better than non fan predictions. We can confirm this by looking at the variance for each subset of predictions"
+
+```{r}
+# Variance for fan prediction matches
+fan_var = var(fans[fans$fan_pred=="Fan",'mean_error'])
+print(paste("Error Variance for games predicted by fans:",round(fan_var,2)))
+# Variance for non fan predication matches
+non_fan_var=var(fans[fans$fan_pred=="Non-Fan",'mean_error'])
+print(paste("Error Variance for games not predicted by fans:",round(non_fan_var,2)))
+#Looks like fans predict their team better
+```
+Games predicted by fans have a lower variance in their error, and therefore appear to be more dialed in to the accurate results,indicating fans are able to make better predictions for the teams they support.
+
+
 
 ```{r}
 head(df)
